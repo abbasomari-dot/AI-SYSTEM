@@ -6,42 +6,53 @@ from app.agents.report_agent import ReportAgent
 from app.services.pdf_generator import PDFGenerator
 
 
-def run():
+def get_user_input():
+    print("\n=== AI CONSULTING ENGINE ===\n")
 
-    restaurant = {
-        "name": "Burger Zone",
-        "type": "Burger Restaurant",
-        "target_audience": "Youth 18-30",
-        "offer": "Burger + Fries for 29 QAR",
-        "location": "Doha"
+    name = input("Project / Restaurant Name: ")
+    business_type = input("Business Type: ")
+    audience = input("Target Audience: ")
+    offer = input("Main Offer / Value Proposition: ")
+    location = input("Location: ")
+
+    return {
+        "name": name,
+        "type": business_type,
+        "target_audience": audience,
+        "offer": offer,
+        "location": location
     }
 
-    brand_agent = BrandDiagnosticAgent()
-    strategy_agent = StrategyAgent()
-    creative_agent = CreativeAgent()
-    analytics_agent = AnalyticsAgent()
-    report_agent = ReportAgent()
-    pdf_generator = PDFGenerator()
 
-    print("Running Brand Diagnostic...")
-    brand_data = brand_agent.run(restaurant)
+def run():
+
+    data = get_user_input()
+
+    print("\nRunning Brand Diagnostic...")
+    brand_agent = BrandDiagnosticAgent()
+    brand_result = brand_agent.run(data)
 
     print("Running Strategy...")
-    strategy = strategy_agent.run(brand_data)
+    strategy_agent = StrategyAgent()
+    strategy_result = strategy_agent.run(brand_result)
 
     print("Running Creative...")
-    creative = creative_agent.run(brand_data)
+    creative_agent = CreativeAgent()
+    creative_result = creative_agent.run(strategy_result)
 
     print("Running Analytics...")
-    kpis = analytics_agent.run(brand_data)
+    analytics_agent = AnalyticsAgent()
+    analytics_result = analytics_agent.run(creative_result)
 
     print("Generating Final Report...")
-    final_report = report_agent.run(brand_data)
+    report_agent = ReportAgent()
+    final_report = report_agent.run(analytics_result)
 
-    pdf_path = pdf_generator.generate(final_report, restaurant["name"])
+    pdf = PDFGenerator()
+    file_path = pdf.generate(final_report, data["name"])
 
-    print("Done.")
-    print("Saved at:", pdf_path)
+    print("\nDone.")
+    print(f"Saved at: {file_path}")
 
 
 if __name__ == "__main__":
