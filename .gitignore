@@ -1,0 +1,20 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environments
+venv/
+.env
+
+# Reports (generated PDFs)
+reports/*.pdf
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
