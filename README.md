@@ -16,7 +16,17 @@ and professional PDF reports for restaurants.
 
 \## Run the system
 
+## 🚀 Version 3.0 – Strategic Consulting Version
 
+### Features:
+- CLI-based project input
+- Executive Summary (consulting-grade)
+- Strategic Positioning
+- Gap Analysis (Strengths, Weaknesses, Growth Opportunities)
+- 90-Day Growth Roadmap
+- Creative Plan
+- Performance KPIs
+- Structured PDF report output
 
 ```bash
 
