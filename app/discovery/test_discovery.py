@@ -1,6 +1,7 @@
 from app.discovery.google_places_collector import GooglePlacesCollector
 from app.discovery.opportunity_scorer import OpportunityScorer
 from app.social.social_audit_engine import SocialAuditEngine
+from app.discovery.insight_engine import InsightEngine
 
 
 def run_test():
@@ -15,22 +16,28 @@ def run_test():
     ranked = scorer.score()
 
     social_engine = SocialAuditEngine()
+    insight_engine = InsightEngine()
 
-    print("\nTop 10 With Social Detection:\n")
+    print("\nTop 5 With Insight Engine:\n")
 
-    for b in ranked[:10]:
+    for b in ranked[:5]:
         details = collector.get_place_details(b["place_id"])
         website = details.get("website")
 
         social_result = social_engine.analyze_from_website(website)
 
+        # attach social_status to business for insight layer
+        b["social_status"] = social_result["social_status"]
+
+        insight = insight_engine.generate(b)
+
         print(
-            f"{b['rank']} | {b['name']} | "
-            f"Score: {b['opportunity_score']} | "
-            f"Label: {b['opportunity_label']} | "
-            f"Website: {website} | "
-            f"Social Health: {social_result['social_health_score']} | "
-            f"Social Status: {social_result['social_status']}"
+            f"{b['rank']} | {b['name']}\n"
+            f"  Score: {b['opportunity_score']} | Label: {b['opportunity_label']}\n"
+            f"  Social: {social_result['social_status']}\n"
+            f"  Lead Tier: {insight['lead_tier']}\n"
+            f"  Core Problem: {insight['core_problem']}\n"
+            f"  Recommended Focus: {insight['recommended_focus']}\n"
         )
 
 
