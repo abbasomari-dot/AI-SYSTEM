@@ -1,9 +1,5 @@
 # run_consultant.py
 
-import os
-import json
-from datetime import datetime
-
 from app.business_orchestrator import BusinessOrchestrator
 
 
@@ -13,97 +9,78 @@ def print_section(title: str):
     print("=" * 60)
 
 
-def save_output(client_name: str, result):
-
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    folder_name = f"clients/{client_name}_{timestamp}"
-
-    os.makedirs(folder_name, exist_ok=True)
-
-    # ---------------------------
-    # Save Growth Report
-    # ---------------------------
-    report_data = {
-        "executive_summary": result.growth_report.executive_summary,
-        "strategic_overview": result.growth_report.strategic_overview,
-        "monthly_plan_snapshot": result.growth_report.monthly_plan_snapshot,
-        "kpi_targets": result.growth_report.kpi_targets,
-        "execution_priorities": result.growth_report.execution_priorities,
-    }
-
-    with open(f"{folder_name}/growth_report.json", "w", encoding="utf-8") as f:
-        json.dump(report_data, f, indent=4)
-
-    # ---------------------------
-    # Save Proposal (TXT)
-    # ---------------------------
-    proposal_text = (
-        f"{result.proposal.title}\n\n"
-        f"{result.proposal.executive_pitch}\n\n"
-        f"{result.proposal.problem_diagnosis}\n\n"
-        f"{result.proposal.proposed_solution}\n\n"
-        f"{result.proposal.investment}\n\n"
-        f"{result.proposal.closing_statement}"
-    )
-
-    with open(f"{folder_name}/proposal.txt", "w", encoding="utf-8") as f:
-        f.write(proposal_text)
-
-    # ---------------------------
-    # Save Outreach
-    # ---------------------------
-    outreach_text = (
-        f"=== COLD DM ===\n\n{result.outreach.cold_dm}\n\n"
-        f"=== FOLLOW UP ===\n\n{result.outreach.follow_up}\n\n"
-        f"=== EMAIL ===\n\n{result.outreach.email_pitch}\n\n"
-        f"=== CALL SCRIPT ===\n\n{result.outreach.call_script}"
-    )
-
-    with open(f"{folder_name}/outreach.txt", "w", encoding="utf-8") as f:
-        f.write(outreach_text)
-
-    print(f"\nAll files saved in: {folder_name}")
-
-
 def main():
 
     print_section("Consultant Mode")
 
-    client_name = input("Client Name: ").strip().replace(" ", "_")
-
+    client_name = input("Client Name: ").strip()
     lead_tier = input("Lead Tier (high/mid/low): ").strip().lower()
-    core_problem = input(
-        "Core Problem (low_visibility / low_engagement / weak_branding / bad_reviews): "
-    ).strip().lower()
-    social_status = input(
-        "Social Status (no_presence / weak / active): "
-    ).strip().lower()
+    core_problem = input("Core Problem: ").strip().lower()
+    social_status = input("Social Status: ").strip().lower()
 
-    try:
-        rating = float(input("Current Rating: ").strip())
-        reviews = int(input("Total Reviews: ").strip())
-    except ValueError:
-        print("Invalid numeric input.")
-        return
+    rating = float(input("Current Rating: ").strip())
+    reviews = int(input("Total Reviews: ").strip())
+
+    print_section("Revenue Model Inputs")
+
+    avg_order_value = float(input("Average Order Value ($): ").strip())
+    monthly_customers = int(input("Active Monthly Customers: ").strip())
+    current_frequency = float(input("Current Purchase Frequency (per month): ").strip())
+    improvement_rate = float(
+        input("Target Improvement % (e.g. 0.15 for 15%): ").strip()
+    )
 
     result = BusinessOrchestrator.run(
         lead_tier=lead_tier,
         core_problem=core_problem,
         social_status=social_status,
         rating=rating,
-        reviews=reviews
+        reviews=reviews,
+        avg_order_value=avg_order_value,
+        monthly_customers=monthly_customers,
+        current_frequency=current_frequency,
+        improvement_rate=improvement_rate
     )
 
-    print_section("Strategic Direction")
-    print(result.growth_report.strategic_overview["Strategic Direction"])
+    # ---------------------------
+    # STRATEGIC LEVER
+    # ---------------------------
+    print_section("Strategic Lever")
+    print(result.revenue_plan.primary_lever)
 
-    print_section("Offer")
-    print(result.offer.offer_type)
+    # ---------------------------
+    # REVENUE IMPACT
+    # ---------------------------
+    print_section("Revenue Impact Projection")
+    print(f"Annual Increase (Strategic Lever): "
+          f"${result.revenue_impact.yearly_increase:,.0f}")
 
-    print_section("Primary Angle")
-    print(result.angle.primary_angle)
+    # ---------------------------
+    # COMPARATIVE IMPACT
+    # ---------------------------
+    print_section("Comparative Financial Impact")
 
-    save_output(client_name, result)
+    for lever, value in result.comparative_impact.impacts.items():
+        print(f"{lever}: ${value:,.0f} annually")
+
+    print("\nHighest Financial Lever:")
+    print(result.comparative_impact.best_lever)
+    print(f"Estimated Annual Increase: "
+          f"${result.comparative_impact.best_annual_increase:,.0f}")
+
+    # ---------------------------
+    # PROPOSAL SUMMARY
+    # ---------------------------
+    print_section("Proposal Summary")
+    print(result.proposal.title)
+    print()
+    print(result.proposal.executive_pitch)
+
+    print_section("Financial ROI Analysis")
+    print(result.proposal.financial_section)
+
+    print_section("Closing Statement")
+    print(result.proposal.closing_statement)
 
     print("\nConsultant Execution Complete ✅")
 

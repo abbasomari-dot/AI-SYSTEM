@@ -11,19 +11,30 @@ class Proposal:
     problem_diagnosis: str
     proposed_solution: str
     investment: str
+    financial_section: str
     closing_statement: str
 
 
 class ProposalBuilder:
 
     @staticmethod
-    def build(strategy: StrategyOutput, offer: Offer, angle: Angle) -> Proposal:
+    def build(
+        strategy: StrategyOutput,
+        offer: Offer,
+        angle: Angle,
+        revenue_impact,
+        selected_package
+    ) -> Proposal:
 
         title = ProposalBuilder._build_title(offer)
         executive_pitch = ProposalBuilder._build_executive_pitch(angle)
         problem_diagnosis = ProposalBuilder._build_problem_section(strategy)
         proposed_solution = ProposalBuilder._build_solution_section(offer)
-        investment = ProposalBuilder._build_investment_section(offer)
+        investment = ProposalBuilder._build_investment_section(selected_package)
+        financial_section = ProposalBuilder._build_financial_section(
+            revenue_impact,
+            selected_package
+        )
         closing_statement = ProposalBuilder._build_closing(angle)
 
         return Proposal(
@@ -32,6 +43,7 @@ class ProposalBuilder:
             problem_diagnosis=problem_diagnosis,
             proposed_solution=proposed_solution,
             investment=investment,
+            financial_section=financial_section,
             closing_statement=closing_statement
         )
 
@@ -83,9 +95,44 @@ class ProposalBuilder:
     # ---------------------------
 
     @staticmethod
-    def _build_investment_section(offer: Offer) -> str:
+    def _build_investment_section(selected_package) -> str:
         return (
-            f"Recommended Investment Model: {offer.pricing_tier}."
+            f"Selected Package: {selected_package.name}\n"
+            f"Investment Range: {selected_package.price_range}"
+        )
+
+    # ---------------------------
+    # Financial ROI Section
+    # ---------------------------
+
+    @staticmethod
+    def _build_financial_section(revenue_impact, selected_package) -> str:
+
+        annual_gain = revenue_impact.yearly_increase
+        monthly_gain = revenue_impact.monthly_increase
+
+        annual_investment = ProposalBuilder._extract_annual_investment(
+            selected_package.price_range
+        )
+
+        net_gain = annual_gain - annual_investment
+
+        if annual_investment > 0:
+            roi_percentage = (net_gain / annual_investment) * 100
+            payback_months = (
+                annual_investment / monthly_gain
+                if monthly_gain > 0 else 0
+            )
+        else:
+            roi_percentage = 0
+            payback_months = 0
+
+        return (
+            f"Estimated Annual Revenue Increase: ${annual_gain:,.0f}\n"
+            f"Estimated Annual Investment: ${annual_investment:,.0f}\n"
+            f"Net Positive Value: ${net_gain:,.0f}\n"
+            f"ROI: {roi_percentage:,.0f}%\n"
+            f"Estimated Payback Period: {payback_months:,.1f} months"
         )
 
     # ---------------------------
@@ -97,5 +144,20 @@ class ProposalBuilder:
         return (
             f"This proposal positions your business for "
             f"{angle.positioning_statement.lower()}. "
-            f"Let’s move forward strategically."
+            f"Based on the projected financial impact, this investment "
+            f"is structured to generate measurable and scalable growth."
         )
+
+    # ---------------------------
+    # Helper: Extract Investment
+    # ---------------------------
+
+    @staticmethod
+    def _extract_annual_investment(price_range: str) -> float:
+        try:
+            monthly_price = price_range.split("–")[0]
+            monthly_price = monthly_price.replace("$", "").replace(",", "").strip()
+            monthly_price = float(monthly_price)
+            return monthly_price * 12
+        except:
+            return 0
