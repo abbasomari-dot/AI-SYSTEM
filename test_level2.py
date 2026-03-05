@@ -1,24 +1,30 @@
-from app.creative.sales_creative_engine import CreativeEngine
-import pprint
+from app.creative.sales_creative_engine import SalesCreativeEngine
+from pprint import pprint
+
 
 def run_test():
 
-    engine = CreativeEngine()
+    engine = SalesCreativeEngine()
 
     creative_input = {
-        "offer_name": "Ramadan Family Box",
+
         "brand_name": "Doha Bites",
+
+        "offer_name": "Ramadan Family Box",
+
         "original_price": 300,
-        "new_price": 270,
+        "new_price": 180,
+
         "platform": "instagram",
+
         "target_audience": "Families in Doha",
-        "audience_size": 20000,
-        "expected_reach_percent": 40
+
+        "audience_size": 8000
     }
 
     result = engine.generate_multi(creative_input)
 
-    pprint.pprint(result)
+    pprint(result)
 
 
 if __name__ == "__main__":

@@ -1,89 +1,147 @@
-# run_consultant.py
+from app.growth.growth_orchestrator import GrowthOrchestrator
+from app.services.client_report_builder import ClientReportBuilder
+from app.services.presentation_builder import PresentationBuilder
+from app.services.pdf_report_builder import PDFReportBuilder
 
-from app.business_orchestrator import BusinessOrchestrator
+from app.leads.lead_pipeline import LeadPipeline
+from app.leads.lead_dashboard import LeadDashboard
+
+from app.intelligence.instagram_analyzer import InstagramAnalyzer
 
 
-def print_section(title: str):
-    print("\n" + "=" * 60)
-    print(title.upper())
-    print("=" * 60)
+def run():
 
+    print("\nAI Marketing Consultant System\n")
 
-def main():
+    pipeline = LeadPipeline()
+    leads = pipeline.run()
 
-    print_section("Consultant Mode")
+    orchestrator = GrowthOrchestrator()
+    instagram = InstagramAnalyzer()
 
-    client_name = input("Client Name: ").strip()
-    lead_tier = input("Lead Tier (high/mid/low): ").strip().lower()
-    core_problem = input("Core Problem: ").strip().lower()
-    social_status = input("Social Status: ").strip().lower()
+    dashboard_leads = []
 
-    rating = float(input("Current Rating: ").strip())
-    reviews = int(input("Total Reviews: ").strip())
+    for lead in leads:
 
-    print_section("Revenue Model Inputs")
+        client_name = lead["name"]
 
-    avg_order_value = float(input("Average Order Value ($): ").strip())
-    monthly_customers = int(input("Active Monthly Customers: ").strip())
-    current_frequency = float(input("Current Purchase Frequency (per month): ").strip())
-    improvement_rate = float(
-        input("Target Improvement % (e.g. 0.15 for 15%): ").strip()
-    )
+        print(f"\nProcessing lead: {client_name}")
 
-    result = BusinessOrchestrator.run(
-        lead_tier=lead_tier,
-        core_problem=core_problem,
-        social_status=social_status,
-        rating=rating,
-        reviews=reviews,
-        avg_order_value=avg_order_value,
-        monthly_customers=monthly_customers,
-        current_frequency=current_frequency,
-        improvement_rate=improvement_rate
-    )
+        # Instagram Analysis
+        insta_data = instagram.analyze(client_name)
 
-    # ---------------------------
-    # STRATEGIC LEVER
-    # ---------------------------
-    print_section("Strategic Lever")
-    print(result.revenue_plan.primary_lever)
+        client_input = {
+            "core_problem": "low_repeat_customers",
+            "social_status": "weak",
+            "rating": lead["rating"],
+            "reviews": lead["reviews"],
+            "lead_tier": "B",
+            "aov": 24,
+            "monthly_customers": 1100,
+            "frequency": 1.2
+        }
 
-    # ---------------------------
-    # REVENUE IMPACT
-    # ---------------------------
-    print_section("Revenue Impact Projection")
-    print(f"Annual Increase (Strategic Lever): "
-          f"${result.revenue_impact.yearly_increase:,.0f}")
+        # Run strategy engine
+        growth_report = orchestrator.run(
+            core_problem=client_input["core_problem"],
+            social_status=client_input["social_status"],
+            rating=client_input["rating"],
+            reviews=client_input["reviews"],
+            lead_tier=client_input["lead_tier"]
+        )
 
-    # ---------------------------
-    # COMPARATIVE IMPACT
-    # ---------------------------
-    print_section("Comparative Financial Impact")
+        # System results
+        system_results = {
 
-    for lever, value in result.comparative_impact.impacts.items():
-        print(f"{lever}: ${value:,.0f} annually")
+            "rating": client_input["rating"],
+            "reviews": client_input["reviews"],
+            "social_status": client_input["social_status"],
+            "core_problem": client_input["core_problem"],
 
-    print("\nHighest Financial Lever:")
-    print(result.comparative_impact.best_lever)
-    print(f"Estimated Annual Increase: "
-          f"${result.comparative_impact.best_annual_increase:,.0f}")
+            "aov": client_input["aov"],
+            "monthly_customers": client_input["monthly_customers"],
+            "frequency": client_input["frequency"],
+            "revenue_model": "standard",
 
-    # ---------------------------
-    # PROPOSAL SUMMARY
-    # ---------------------------
-    print_section("Proposal Summary")
-    print(result.proposal.title)
-    print()
-    print(result.proposal.executive_pitch)
+            "primary_lever": growth_report.strategic_overview["Strategic Direction"],
+            "best_lever": growth_report.strategic_overview["Campaign Framework"],
+            "financial_impact": "Projected growth via engagement expansion",
 
-    print_section("Financial ROI Analysis")
-    print(result.proposal.financial_section)
+            "annual_revenue_increase": "Estimated growth based on engagement strategy",
+            "roi": "Projected positive ROI",
+            "payback_period": "3-6 months",
 
-    print_section("Closing Statement")
-    print(result.proposal.closing_statement)
+            "campaign_type": growth_report.strategic_overview["Campaign Framework"],
+            "offer_strategy": growth_report.strategic_overview["Content Structure"],
+            "sales_angle": growth_report.strategic_overview["Growth Focus"],
 
-    print("\nConsultant Execution Complete ✅")
+            "hooks": growth_report.monthly_plan_snapshot,
+            "reel_ideas": growth_report.execution_priorities,
+            "poster_concepts": growth_report.monthly_plan_snapshot,
+            "prompts": growth_report.execution_priorities,
+
+            "conversion_probability": "Moderate",
+            "performance_tier": client_input["lead_tier"],
+            "recommendation": growth_report.executive_summary,
+
+            "risk_score": "Low",
+            "risk_warnings": [],
+
+            "suitability_score": "High",
+            "suitability_warnings": [],
+
+            "reach": 2000,
+            "engagement": 564,
+            "clicks": 320,
+            "conversions": 200,
+
+            "month1": growth_report.monthly_plan_snapshot[0],
+            "month2": growth_report.monthly_plan_snapshot[1],
+            "month3": growth_report.monthly_plan_snapshot[2],
+
+            # Instagram data
+            "followers": insta_data["followers"],
+            "posts": insta_data["posts"],
+            "instagram_url": insta_data["instagram_url"]
+        }
+
+        # Markdown report
+        report_builder = ClientReportBuilder(client_name, system_results)
+        report_path = report_builder.save_report()
+
+        print("Report generated:", report_path)
+
+        # PowerPoint
+        presentation = PresentationBuilder(client_name, system_results)
+        ppt_path = presentation.save()
+
+        print("Presentation generated:", ppt_path)
+
+        # PDF
+        pdf_builder = PDFReportBuilder(client_name, system_results)
+        pdf_path = pdf_builder.build()
+
+        print("PDF generated:", pdf_path)
+
+        # Add to dashboard
+        dashboard_leads.append({
+            "name": client_name,
+            "rating": lead["rating"],
+            "reviews": lead["reviews"],
+            "followers": insta_data["followers"],
+            "posts": insta_data["posts"],
+            "engagement_rate": insta_data["engagement_rate"],
+            "lead_score": insta_data["instagram_score"],
+            "instagram_url": insta_data["instagram_url"]
+        })
+
+    # Save dashboard
+    dashboard = LeadDashboard()
+
+    dashboard_path = dashboard.save(dashboard_leads)
+
+    print("\nLead dashboard saved:", dashboard_path)
 
 
 if __name__ == "__main__":
-    main()
+    run()
