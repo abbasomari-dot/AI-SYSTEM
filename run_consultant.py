@@ -1,146 +1,216 @@
 from app.growth.growth_orchestrator import GrowthOrchestrator
-from app.services.client_report_builder import ClientReportBuilder
-from app.services.presentation_builder import PresentationBuilder
-from app.services.pdf_report_builder import PDFReportBuilder
-
-from app.leads.lead_pipeline import LeadPipeline
-from app.leads.lead_dashboard import LeadDashboard
-
-from app.intelligence.instagram_analyzer import InstagramAnalyzer
+from app.data.google_maps_client import GoogleMapsClient
+from app.data.instagram_finder import InstagramFinder
+from app.reporting.pdf_builder import PDFReportBuilder
+from app.analysis.analysis_engine import AnalysisEngine
 
 
 def run():
 
-    print("\nAI Marketing Consultant System\n")
+    print("=== AI Marketing Consultant System ===\n")
 
-    pipeline = LeadPipeline()
-    leads = pipeline.run()
+    # ---------------------------
+    # INPUT
+    # ---------------------------
+    client_input = {
+        "name": "Nusr-Et Steakhouse Doha",
+        "core_problem": "low customer acquisition",
+        "lead_tier": "high"
+    }
 
+    # ---------------------------
+    # GOOGLE DATA
+    # ---------------------------
+    google_client = GoogleMapsClient()
+    google_data = google_client.get_place_data(client_input["name"])
+
+    rating = google_data.get("rating", 0)
+    reviews = google_data.get("reviews", 0)
+
+    # ---------------------------
+    # INSTAGRAM
+    # ---------------------------
+    instagram_finder = InstagramFinder(api_key="d73e7006625d69fb60e0aa7daef0da018513f08de467114fe01804a4b6e633ad")
+    instagram_data = instagram_finder.get_instagram_data(client_input["name"])
+
+    instagram_link = instagram_data.get("link", "Not found")
+    followers = instagram_data.get("followers")
+    followers_text = f"{followers:,}" if followers else "Not publicly available"
+
+    # ---------------------------
+    # COMPETITORS
+    # ---------------------------
+    competitors = google_client.get_competitors(
+        query="steakhouse",
+        location="Doha",
+        limit=3
+    )
+
+    # ---------------------------
+    # ANALYSIS
+    # ---------------------------
+    analysis = AnalysisEngine.analyze(
+        name=client_input["name"],
+        rating=rating,
+        reviews=reviews,
+        location="Doha",
+        instagram_followers=followers,
+        competitors=competitors
+    )
+
+    # ---------------------------
+    # ORCHESTRATOR
+    # ---------------------------
     orchestrator = GrowthOrchestrator()
-    instagram = InstagramAnalyzer()
 
-    dashboard_leads = []
+    growth_report = orchestrator.run(
+        name=client_input["name"],
+        core_problem=client_input["core_problem"],
+        lead_tier=client_input["lead_tier"],
+        social_status=instagram_link,
+        rating=rating,
+        reviews=reviews
+    )
 
-    for lead in leads:
+    # ---------------------------
+    # PDF BUILDER
+    # ---------------------------
+    filename = f"clients/{client_input['name']}_growth_report.pdf"
+    builder = PDFReportBuilder(filename)
 
-        client_name = lead["name"]
+    builder.add_cover_page(client_input["name"])
+    builder.add_title(f"{client_input['name']} Growth Report")
 
-        print(f"\nProcessing lead: {client_name}")
+    # ---------------------------
+    # SNAPSHOT
+    # ---------------------------
+    builder.add_section(
+        "Business Snapshot",
+        f"""
+<b>Business:</b> {client_input["name"]}<br/>
+<b>Location:</b> Doha<br/>
+<b>Rating:</b> {rating} ⭐<br/>
+<b>Reviews:</b> {reviews}<br/>
+<b>Market Average:</b> {analysis['avg_market_rating']} ⭐
+"""
+    )
 
-        # Instagram Analysis
-        insta_data = instagram.analyze(client_name)
+    # ---------------------------
+    # MARKET POSITION
+    # ---------------------------
+    builder.add_section(
+        "Market Position",
+        f"""
+Current rating: {rating} ⭐<br/>
+Market average: {analysis['avg_market_rating']} ⭐<br/><br/>
 
-        client_input = {
-            "core_problem": "low_repeat_customers",
-            "social_status": "weak",
-            "rating": lead["rating"],
-            "reviews": lead["reviews"],
-            "lead_tier": "B",
-            "aov": 24,
-            "monthly_customers": 1100,
-            "frequency": 1.2
-        }
+<b>Position:</b> {analysis['position']}
+"""
+    )
 
-        # Run strategy engine
-        growth_report = orchestrator.run(
-            core_problem=client_input["core_problem"],
-            social_status=client_input["social_status"],
-            rating=client_input["rating"],
-            reviews=client_input["reviews"],
-            lead_tier=client_input["lead_tier"]
-        )
+    # ---------------------------
+    # COMPETITORS
+    # ---------------------------
+    comp_list = "<br/>".join([f"- {c['name']} → ⭐ {c['rating']} ({c['reviews']})" for c in competitors])
 
-        # System results
-        system_results = {
+    builder.add_section(
+        "Market Competitors",
+        comp_list
+    )
 
-            "rating": client_input["rating"],
-            "reviews": client_input["reviews"],
-            "social_status": client_input["social_status"],
-            "core_problem": client_input["core_problem"],
+    # ---------------------------
+    # GROWTH (بيع)
+    # ---------------------------
+    builder.add_section(
+        "Growth Opportunity",
+        f"""
+Clear opportunity to increase revenue within 90 days.<br/><br/>
 
-            "aov": client_input["aov"],
-            "monthly_customers": client_input["monthly_customers"],
-            "frequency": client_input["frequency"],
-            "revenue_model": "standard",
+By improving visibility and conversion strategy,
+this business can realistically achieve:<br/>
+<b>{analysis['growth']}</b>
+"""
+    )
 
-            "primary_lever": growth_report.strategic_overview["Strategic Direction"],
-            "best_lever": growth_report.strategic_overview["Campaign Framework"],
-            "financial_impact": "Projected growth via engagement expansion",
+    # ---------------------------
+    # 🔥 REVENUE LEAKAGE
+    # ---------------------------
+    builder.add_section(
+        "Revenue Leakage",
+        f"""
+<b>⚠️ Critical Revenue Loss</b><br/><br/>
 
-            "annual_revenue_increase": "Estimated growth based on engagement strategy",
-            "roi": "Projected positive ROI",
-            "payback_period": "3-6 months",
+Your business is currently losing approximately 
+<b>${analysis['revenue_loss_range']}</b> per day.<br/><br/>
 
-            "campaign_type": growth_report.strategic_overview["Campaign Framework"],
-            "offer_strategy": growth_report.strategic_overview["Content Structure"],
-            "sales_angle": growth_report.strategic_overview["Growth Focus"],
+This is driven by low visibility compared to competitors,
+resulting in <b>{analysis['lost_customers_range']} potential customers</b>
+choosing other restaurants daily.<br/><br/>
 
-            "hooks": growth_report.monthly_plan_snapshot,
-            "reel_ideas": growth_report.execution_priorities,
-            "poster_concepts": growth_report.monthly_plan_snapshot,
-            "prompts": growth_report.execution_priorities,
+<b>Over 30 days:</b><br/>
+<b>${int(analysis['avg_order_value']) * 30 * int(analysis['lost_customers_range'].split('-')[0])}+ </b><br/><br/>
 
-            "conversion_probability": "Moderate",
-            "performance_tier": client_input["lead_tier"],
-            "recommendation": growth_report.executive_summary,
+This is not a marketing issue — this is a direct revenue leak.
+"""
+    )
 
-            "risk_score": "Low",
-            "risk_warnings": [],
+    # ---------------------------
+    # RISK
+    # ---------------------------
+    builder.add_section(
+        "Risk Analysis",
+        """
+If no action is taken, competitors will continue capturing
+market demand daily.<br/><br/>
 
-            "suitability_score": "High",
-            "suitability_warnings": [],
+This will lead to:
+- Reduced visibility<br/>
+- Lower customer acquisition<br/>
+- Ongoing revenue loss<br/><br/>
 
-            "reach": 2000,
-            "engagement": 564,
-            "clicks": 320,
-            "conversions": 200,
+The longer this continues, the harder it becomes to recover.
+"""
+    )
 
-            "month1": growth_report.monthly_plan_snapshot[0],
-            "month2": growth_report.monthly_plan_snapshot[1],
-            "month3": growth_report.monthly_plan_snapshot[2],
+    # ---------------------------
+    # STRATEGY
+    # ---------------------------
+    strategy_text = "<br/>".join([f"- {k}: {v}" for k, v in growth_report.strategic_overview.items()])
+    builder.add_section("Strategy", strategy_text)
 
-            # Instagram data
-            "followers": insta_data["followers"],
-            "posts": insta_data["posts"],
-            "instagram_url": insta_data["instagram_url"]
-        }
+    # ---------------------------
+    # MONTHLY PLAN
+    # ---------------------------
+    monthly_text = "<br/>".join([f"- {item}" for item in growth_report.monthly_plan_snapshot])
+    builder.add_section("Monthly Plan", monthly_text)
 
-        # Markdown report
-        report_builder = ClientReportBuilder(client_name, system_results)
-        report_path = report_builder.save_report()
+    # ---------------------------
+    # EXECUTION
+    # ---------------------------
+    execution_text = "<br/>".join([f"- {item}" for item in growth_report.execution_priorities])
+    builder.add_section("Execution Priorities", execution_text)
 
-        print("Report generated:", report_path)
+    # ---------------------------
+    # 🚀 CTA
+    # ---------------------------
+    builder.add_section(
+        "Next Step",
+        """
+This report clearly shows a measurable revenue loss.<br/><br/>
 
-        # PowerPoint
-        presentation = PresentationBuilder(client_name, system_results)
-        ppt_path = presentation.save()
+If you want to recover this lost revenue within the next 30–60 days,
+the next step is to implement a structured growth strategy.<br/><br/>
 
-        print("Presentation generated:", ppt_path)
+We can start immediately and track results within weeks.
+"""
+    )
 
-        # PDF
-        pdf_builder = PDFReportBuilder(client_name, system_results)
-        pdf_path = pdf_builder.build()
+    # ---------------------------
+    # BUILD
+    # ---------------------------
+    builder.build()
 
-        print("PDF generated:", pdf_path)
-
-        # Add to dashboard
-        dashboard_leads.append({
-            "name": client_name,
-            "rating": lead["rating"],
-            "reviews": lead["reviews"],
-            "followers": insta_data["followers"],
-            "posts": insta_data["posts"],
-            "engagement_rate": insta_data["engagement_rate"],
-            "lead_score": insta_data["instagram_score"],
-            "instagram_url": insta_data["instagram_url"]
-        })
-
-    # Save dashboard
-    dashboard = LeadDashboard()
-
-    dashboard_path = dashboard.save(dashboard_leads)
-
-    print("\nLead dashboard saved:", dashboard_path)
+    print(f"\n✅ PDF Generated: {filename}")
 
 
 if __name__ == "__main__":

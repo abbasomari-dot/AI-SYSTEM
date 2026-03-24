@@ -1,5 +1,3 @@
-# app/growth/action_plan_generator.py
-
 from dataclasses import dataclass
 from typing import List
 from app.growth.strategy_engine import StrategyOutput
@@ -53,45 +51,53 @@ class ActionPlanGenerator:
         return mapping.get(direction, "Build stable growth system")
 
     # ---------------------------
-    # Weekly Focus
+    # Weekly Focus (Dynamic)
     # ---------------------------
 
     @staticmethod
     def _determine_weekly_focus(framework: str) -> List[str]:
 
-        mapping = {
-            "Awareness Campaign": [
-                "Audience targeting setup",
-                "Launch awareness content",
-                "Boost reach with ads",
-                "Analyze visibility metrics"
-            ],
-            "Engagement Boost Campaign": [
-                "Engagement content launch",
-                "Interactive posts",
-                "Community interaction",
-                "Optimize engagement strategy"
-            ],
-            "Brand Identity Campaign": [
-                "Visual identity refinement",
-                "Brand story content",
-                "Consistent branding rollout",
-                "Brand perception review"
-            ],
-            "Trust Rebuild Campaign": [
-                "Review response strategy",
-                "Customer testimonial campaign",
-                "Reputation ads",
-                "Rating improvement push"
+        if framework == "Offer Amplification Campaign":
+            return [
+                "Create irresistible limited-time offers",
+                "Design high-converting promotional content",
+                "Launch paid campaigns focused on offers",
+                "Track conversions and optimize performance"
             ]
-        }
 
-        return mapping.get(framework, [
-            "Offer content creation",
-            "Conversion optimization",
-            "Promotion launch",
-            "Performance evaluation"
-        ])
+        if framework == "Trust Rebuild Campaign":
+            return [
+                "Respond to all negative reviews",
+                "Improve customer experience touchpoints",
+                "Encourage happy customers to leave reviews",
+                "Monitor rating improvement weekly"
+            ]
+
+        if framework == "Awareness Campaign":
+            return [
+                "Define target audience clearly",
+                "Launch reach-focused content",
+                "Boost posts for visibility",
+                "Track impressions and reach"
+            ]
+
+        if framework == "Engagement Boost Campaign":
+            return [
+                "Increase posting frequency",
+                "Create interactive content (polls, questions)",
+                "Engage with comments actively",
+                "Track engagement rate"
+            ]
+
+        if framework == "Brand Identity Campaign":
+            return [
+                "Define brand visual identity",
+                "Create storytelling content",
+                "Align messaging across platforms",
+                "Audit brand consistency"
+            ]
+
+        return ["Execute general marketing tasks"]
 
     # ---------------------------
     # Key Actions
@@ -100,45 +106,9 @@ class ActionPlanGenerator:
     @staticmethod
     def _determine_key_actions(strategy: StrategyOutput) -> List[str]:
 
-        actions = []
-
-        # Direction Based Actions
-        if strategy.strategic_direction == "Reputation Recovery":
-            actions.append("Respond to all negative reviews")
-            actions.append("Request new reviews from happy customers")
-
-        if strategy.strategic_direction == "Authority Building":
-            actions.append("Launch review acquisition campaign")
-            actions.append("Highlight customer testimonials")
-
-        if strategy.strategic_direction == "Premium Positioning":
-            actions.append("Upgrade visuals and brand assets")
-            actions.append("Promote premium offers")
-
-        # Content Structure Actions
-        if strategy.content_structure == "Setup + Intro Content":
-            actions.append("Create brand introduction posts")
-            actions.append("Launch initial posting schedule")
-
-        if strategy.content_structure == "Consistency + Proof Content":
-            actions.append("Post case studies and proof content")
-            actions.append("Establish weekly posting calendar")
-
-        if strategy.content_structure == "Conversion-Oriented Content":
-            actions.append("Create strong call-to-action posts")
-            actions.append("Launch limited-time offers")
-
-        # Growth Focus Actions
-        if strategy.growth_focus == "Revenue Optimization":
-            actions.append("Optimize pricing strategy")
-            actions.append("Launch upsell campaigns")
-
-        if strategy.growth_focus == "Market Expansion":
-            actions.append("Target new audience segments")
-            actions.append("Expand geographic reach")
-
-        if strategy.growth_focus == "Lead Generation":
-            actions.append("Run lead magnet campaign")
-            actions.append("Collect customer contact data")
-
-        return actions
+        return [
+            "Define campaign objectives",
+            "Prepare content calendar",
+            "Launch campaigns",
+            "Track performance metrics"
+        ]

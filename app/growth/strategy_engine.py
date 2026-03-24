@@ -1,5 +1,3 @@
-# app/growth/strategy_engine.py
-
 from dataclasses import dataclass
 
 
@@ -33,19 +31,20 @@ class StrategyEngine:
         )
 
         campaign_framework = StrategyEngine._determine_campaign_framework(
-            data.core_problem
+            data.core_problem,
+            data.rating,
+            data.reviews
         )
 
         content_structure = StrategyEngine._determine_content_structure(
             data.social_status
         )
 
-        # Base Growth Focus
         growth_focus = StrategyEngine._determine_growth_focus(
             data.lead_tier
         )
 
-        # 🔥 Strategic Override Layer
+        # Strategic Override
         growth_focus = StrategyEngine._apply_strategic_override(
             strategic_direction,
             growth_focus
@@ -59,11 +58,15 @@ class StrategyEngine:
         )
 
     # ---------------------------
-    # Strategic Direction Logic
+    # Strategic Direction Logic (Updated)
     # ---------------------------
 
     @staticmethod
     def _determine_strategic_direction(lead_tier, rating, reviews, social_status):
+
+        # 🔥 NEW: Market Dominance
+        if rating >= 4.8 and reviews >= 1000:
+            return "Market Dominance"
 
         if rating < 3.5:
             return "Reputation Recovery"
@@ -80,11 +83,19 @@ class StrategyEngine:
         return "Structured Growth"
 
     # ---------------------------
-    # Campaign Framework Logic
+    # Campaign Framework
     # ---------------------------
 
     @staticmethod
-    def _determine_campaign_framework(core_problem):
+    def _determine_campaign_framework(core_problem, rating, reviews):
+
+        # High demand → Offers
+        if reviews >= 500 and rating >= 4.0:
+            return "Offer Amplification Campaign"
+
+        # Low rating → Trust
+        if rating < 3.5:
+            return "Trust Rebuild Campaign"
 
         mapping = {
             "low_visibility": "Awareness Campaign",
@@ -96,7 +107,7 @@ class StrategyEngine:
         return mapping.get(core_problem, "Offer Amplification Campaign")
 
     # ---------------------------
-    # Content Structure Logic
+    # Content Structure
     # ---------------------------
 
     @staticmethod
@@ -111,7 +122,7 @@ class StrategyEngine:
         return mapping.get(social_status, "Foundational Content")
 
     # ---------------------------
-    # Base Growth Focus Logic
+    # Growth Focus
     # ---------------------------
 
     @staticmethod
@@ -126,7 +137,7 @@ class StrategyEngine:
         return mapping.get(lead_tier, "Balanced Growth")
 
     # ---------------------------
-    # 🔥 Strategic Override Layer
+    # Strategic Override
     # ---------------------------
 
     @staticmethod
@@ -137,5 +148,8 @@ class StrategyEngine:
 
         if strategic_direction == "Social Activation":
             return "Foundation Building"
+
+        if strategic_direction == "Market Dominance":
+            return "Scale & Expansion"
 
         return growth_focus
